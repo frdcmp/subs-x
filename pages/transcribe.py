@@ -19,6 +19,9 @@ def convert_srt_to_csv(srt_text):
             text = ' '.join(parts[2:])
             data.append([idx, timecodes[0], timecodes[1], text])
     df = pd.DataFrame(data, columns=['ID', 'TimecodeIN', 'TimecodeOUT', 'Text'])
+    # Save the DataFrame as an Excel file
+    output_file_path = './temp/temp.xlsx'
+    df.to_excel(output_file_path, index=False)
     return df
 
 def load_srt_file(file_path):
