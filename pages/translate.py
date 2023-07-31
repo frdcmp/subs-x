@@ -30,7 +30,7 @@ def main():
     df = pd.read_excel(file_path)
     
     # Get available languages for translation
-    supported_languages = ['en', 'fr', 'es', 'de', 'ja', 'ko']  # You can add more languages here
+    supported_languages = ['en', 'fr', 'es', 'de', 'ja', 'ko', 'it', 'th']  # You can add more languages here
     
     # Compact checkboxes into a multiselect dropdown
     selected_languages = st.multiselect("Select Target Languages", supported_languages)
