@@ -1,18 +1,14 @@
 import os
 import streamlit as st
-import whisperx
-from whisperx.utils import get_writer
+import whisper
+from whisper.utils import get_writer
 import pandas as pd
 import re
-
-device = "cuda" 
-batch_size = 16 # reduce if low on GPU mem
-compute_type = "float16" # change to "int8" if low on GPU mem (may reduce accuracy)
 
 # Set Streamlit layout to wide
 st.set_page_config(layout="wide")
 
-def convert_srt_to_xslx(srt_text):
+def convert_srt_to_csv(srt_text):
     lines = srt_text.strip().split('\n\n')
     data = []
     for line in lines:
@@ -38,26 +34,11 @@ def get_media_files():
     return media_files
 
 def transcribe_audio_files(model, media_file):
-    result = model.transcribe(media_file)
-    model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=device)
-    result = whisperx.align(result["segments"], model_a, metadata, media_file, device, return_char_alignments=False)
-    
-    # DIARIZE
-    diarize_model = whisperx.DiarizationPipeline(use_auth_token="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", device=device)
-    diarize_segments = diarize_model(media_file)
-    #diarize_model(media_file, min_speakers=min_speakers, max_speakers=max_speakers)
-    result = whisperx.assign_word_speakers(diarize_segments, result)
-    
-    options = {
-    "max_line_width": 4,
-    "max_line_count": 3,
-    "highlight_words": False,
-    }
-
+    speech = model.transcribe(media_file)
     writer = get_writer("srt", str("./temp"))
-    writer(result, "temp", options)
+    writer(speech, "temp")
+    return speech
 
-    return
 
 def calculate_word_count(text):
     return len(text.split())
@@ -67,8 +48,8 @@ def main():
     # Load the Whisper model with the selected size
     model_options = ["tiny", "base", "small", "medium", "large"]
     model_name = st.selectbox("Select model size", model_options, index=3)
-    model = whisperx.load_model(model_name, device, compute_type=compute_type)
-    st.success("Whisperx model loaded.")
+    model = whisper.load_model(model_name)
+    st.success("Whisper model loaded.")
     # Get the list of media files in the folder
     media_files = get_media_files()
 
@@ -90,7 +71,7 @@ def main():
             # Transcribe the media file
             st.write("--- Transcription Result ---")
             try:
-                transcribe_audio_files(model, input_file)
+                transcription_result = transcribe_audio_files(model, input_file)
             except Exception as e:
                 st.error(f"Transcription failed: {str(e)}")
             else:
@@ -99,7 +80,7 @@ def main():
                 st.title("SRT")
                 srt_file_path = "./temp/temp.srt"
                 srt_text = load_srt_file(srt_file_path)
-                df = convert_srt_to_xslx(srt_text)
+                df = convert_srt_to_csv(srt_text)
 
                 # Display the converted DataFrame
                 st.write("Converted DataFrame:")
